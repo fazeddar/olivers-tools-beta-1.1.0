@@ -424,7 +424,8 @@ body {
     opacity: 0;
 }
 
-.settings-overlay {
+.settings-overlay,
+.support-overlay {
     position: fixed;
     inset: 0;
     z-index: 10;
@@ -440,12 +441,14 @@ body {
     transition: opacity 0.22s ease;
 }
 
-.settings-overlay.visible {
+.settings-overlay.visible,
+.support-overlay.visible {
     opacity: 1;
     pointer-events: auto;
 }
 
-.settings-panel {
+.settings-panel,
+.support-panel {
     width: min(920px, 97vw);
     min-height: 460px;
     position: relative;
@@ -457,6 +460,13 @@ body {
     -webkit-backdrop-filter: blur(24px) saturate(130%);
     backdrop-filter: blur(24px) saturate(130%);
     padding: 28px;
+}
+
+.support-action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 .settings-close {
@@ -844,11 +854,13 @@ body {
         min-width: 140px;
     }
 
-    .settings-overlay {
+    .settings-overlay,
+    .support-overlay {
         padding: 14px;
     }
 
-    .settings-panel {
+    .settings-panel,
+    .support-panel {
         min-height: 260px;
         padding: 18px;
     }
