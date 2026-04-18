@@ -52,8 +52,12 @@ const topBar = document.querySelector('.top-bar');
 const openBlankBtn = document.getElementById('openBlankBtn');
 const sideMenu = document.getElementById('sideMenu');
 const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+const supportMenuBtn = document.getElementById('supportMenuBtn');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+const supportOverlay = document.getElementById('supportOverlay');
+const supportCloseBtn = document.getElementById('supportCloseBtn');
+const supportRequestBtn = document.getElementById('supportRequestBtn');
 const settingsOpenBlankBtn = document.getElementById('settingsOpenBlankBtn');
 const settingsAppearanceBtn = document.getElementById('settingsAppearanceBtn');
 const settingsPrivacyBtn = document.getElementById('settingsPrivacyBtn');
@@ -409,12 +413,45 @@ function closeSettingsPanel() {
     sideMenu.classList.remove('side-menu-locked');
 }
 
+function openSupportPanel() {
+    if (!supportOverlay || !sideMenu) {
+        return;
+    }
+
+    supportOverlay.classList.add('visible');
+    supportOverlay.setAttribute('aria-hidden', 'false');
+    sideMenu.classList.add('side-menu-locked');
+    supportMenuBtn?.blur();
+}
+
+function closeSupportPanel() {
+    if (!supportOverlay || !sideMenu) {
+        return;
+    }
+
+    supportOverlay.classList.remove('visible');
+    supportOverlay.setAttribute('aria-hidden', 'true');
+    sideMenu.classList.remove('side-menu-locked');
+}
+
 settingsMenuBtn?.addEventListener('click', openSettingsPanel);
 settingsCloseBtn?.addEventListener('click', closeSettingsPanel);
+supportMenuBtn?.addEventListener('click', openSupportPanel);
+supportCloseBtn?.addEventListener('click', closeSupportPanel);
+
+supportRequestBtn?.addEventListener('click', () => {
+    closeSupportPanel();
+});
 
 settingsOverlay?.addEventListener('click', event => {
     if (event.target === settingsOverlay) {
         closeSettingsPanel();
+    }
+});
+
+supportOverlay?.addEventListener('click', event => {
+    if (event.target === supportOverlay) {
+        closeSupportPanel();
     }
 });
 
@@ -424,6 +461,8 @@ window.addEventListener('keydown', event => {
             closePartnersWindow();
         } else if (gamesOverlay?.classList.contains('visible')) {
             closeGamesWindow();
+        } else if (supportOverlay?.classList.contains('visible')) {
+            closeSupportPanel();
         } else if (settingsOverlay?.classList.contains('visible')) {
             closeSettingsPanel();
         }
