@@ -70,6 +70,7 @@ const partnersWindowResize = document.getElementById('partnersWindowResize');
 const gamesOverlay = document.getElementById('gamesOverlay');
 const gamesWindow = document.getElementById('gamesWindow');
 const gamesWindowHeader = document.getElementById('gamesWindowHeader');
+const gamesWindowBack = document.getElementById('gamesWindowBack');
 const gamesWindowClose = document.getElementById('gamesWindowClose');
 const gamesWindowResize = document.getElementById('gamesWindowResize');
 const gamesWindowBody = document.getElementById('gamesWindowBody');
@@ -98,7 +99,19 @@ function openGamesWindow() {
     updateActiveGamesMenuButton();
 }
 
+function stopGamesPreview() {
+    if (!gamesWindowBody) {
+        return;
+    }
+
+    gamesWindowBody.classList.remove('has-preview');
+    if (gamesPreviewFrame) {
+        gamesPreviewFrame.src = 'about:blank';
+    }
+}
+
 function closeGamesWindow() {
+    stopGamesPreview();
     gamesOverlay?.classList.remove('visible');
     gamesOverlay?.setAttribute('aria-hidden', 'true');
 }
@@ -141,6 +154,7 @@ function updateActiveGamesMenuButton() {
 partnersDockBtn?.addEventListener('click', openPartnersWindow);
 partnersWindowClose?.addEventListener('click', closePartnersWindow);
 gamesDockBtn?.addEventListener('click', openGamesWindow);
+gamesWindowBack?.addEventListener('click', stopGamesPreview);
 gamesWindowClose?.addEventListener('click', closeGamesWindow);
 
 partnersOverlay?.addEventListener('click', event => {
@@ -169,7 +183,7 @@ gamesMenuButtons.forEach(button => {
 
         // Letter menu should keep scroll behavior.
         if (target) {
-            gamesWindowBody.classList.remove('has-preview');
+            stopGamesPreview();
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     });
@@ -239,7 +253,13 @@ partnersWindowResize?.addEventListener('pointerdown', event => {
 });
 
 gamesWindowHeader?.addEventListener('pointerdown', event => {
-    if (!gamesWindow || event.target === gamesWindowClose || gamesWindowClose?.contains(event.target)) {
+    if (
+        !gamesWindow ||
+        event.target === gamesWindowClose ||
+        gamesWindowClose?.contains(event.target) ||
+        event.target === gamesWindowBack ||
+        gamesWindowBack?.contains(event.target)
+    ) {
         return;
     }
 
