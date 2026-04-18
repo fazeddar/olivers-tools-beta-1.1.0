@@ -131,6 +131,25 @@ body {
     cursor: pointer;
 }
 
+.games-window-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.games-window-back,
+.games-window-close {
+    border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
 .partners-window-body,
 .games-window-body {
     padding: 16px;
