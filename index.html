@@ -23,7 +23,7 @@
     <aside class="side-menu" id="sideMenu" aria-label="Main menu">
         <h2 class="side-menu-title">Menu</h2>
         <button class="side-menu-button" id="settingsMenuBtn" type="button">Settings</button>
-        <button class="side-menu-button" type="button">Support</button>
+        <button class="side-menu-button" id="supportMenuBtn" type="button">Support Me </button>
     </aside>
 
     <div class="app-shell">
@@ -101,6 +101,17 @@
                         <span class="theme-swatch-label">Black</span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="support-overlay" id="supportOverlay" aria-hidden="true">
+        <div class="support-panel" role="dialog" aria-modal="true" aria-labelledby="supportPanelTitle">
+            <button class="settings-close" id="supportCloseBtn" type="button" aria-label="Close support">Close</button>
+            <h2 class="settings-title" id="supportPanelTitle">Support</h2>
+            <p class="settings-view-text">Send requests or report a bug here.</p>
+            <div class="settings-button-row">
+                <a class="support-action-link settings-action-button" id="supportRequestBtn" href="https://forms.office.com/r/LSFzDSfdHY" target="_blank" rel="noopener noreferrer">req g@m3/bug</a>
             </div>
         </div>
     </div>
