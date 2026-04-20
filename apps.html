@@ -1,23 +1,30 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <!--
 =================================================================
-  HOW TO ADD MORE GAMES
-  ================================================================
-  1. Create a new HTML file in the apps/ folder
-     Example: apps/mygame.html, apps/anothergame.html, etc.
+    ONE FILE MULTI-GAME SETUP (ID MUST MATCH)
 
-  2. Put your game code in that file
+    RULE:
+    - button id in index.html == game id in apps.html
+    - data-src must be: apps.html#same-id
 
-  3. In index.html, find a games-section and add a button:
-     <button class="outline-button" type="button" data-src="apps/mygame.html">
-         My Game Name
-     </button>
+    BUTTON EXAMPLE (index.html):
+        <button id="slope" class="outline-button" data-src="apps.html#slope">slope</button>
 
-  4. Each button gets its own unique id and data-src path.
-     The system loads the right game file based on which button is clicked.
+    GAME CODE EXAMPLE (apps.html):
+        <script>
+            window.inlineGames = window.inlineGames || {};
+            window.inlineGames["slope"] = function (root) {
+                root.innerHTML = "<h1>slope</h1><p>game loads here</p>";
+            };
+        </script>
 
-  That's it! No need to touch this file or script.js again.
+    HOW TO ADD ANOTHER GAME:
+    1) Pick id: retro
+    2) Add button: id="retro" data-src="apps.html#retro"
+    3) Add code: window.inlineGames["retro"] = function(root){ ... }
+
+    If id names do not match exactly, that game will not load.
 =================================================================
 -->
 <head>
@@ -231,6 +238,722 @@
         </form>
     </div>
     <script>
+        window.inlineGames = window.inlineGames || {};
+
+        function showInlineGame(gameId) {
+            const root = document.createElement('main');
+            root.id = 'inlineGameRoot';
+            root.style.minHeight = '100vh';
+            root.style.display = 'grid';
+            root.style.placeItems = 'center';
+            root.style.padding = '24px';
+            root.style.background = '#0b1020';
+            root.style.color = '#eef2ff';
+            root.style.fontFamily = 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+            document.body.innerHTML = '';
+            document.body.appendChild(root);
+
+            const gameFactory = window.inlineGames[gameId];
+            if (typeof gameFactory === 'function') {
+                gameFactory(root);
+                return;
+            }
+
+            root.innerHTML = `
+                <section style="max-width:760px;border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:18px;background:rgba(255,255,255,.06)">
+                    <h1 style="margin:0 0 10px;font-size:1.2rem;text-transform:uppercase;letter-spacing:.06em">Game ID Not Found</h1>
+                    <p style="margin:0 0 8px">No game code is registered for id: <strong>${gameId}</strong></p>
+                    <p style="margin:0;opacity:.85">Add this in apps.html: window.inlineGames["${gameId}"] = function(root) { /* game */ };</p>
+                </section>`;
+        }
+
+        // Ultimate Game Stash file
+        // For the regularly updating doc go to:
+        // https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/
+        window.inlineGames.buildnow = function (root) {
+            const BASE_URL = 'https://cdn.jsdelivr.net/gh/genizy/cg-rip@main/buildnow-gg/';
+            const SPLIT_MAP = {
+                '7db022abd161455e3cc5f207e75d294b.wasm': null,
+                'ab8dd356a41a2943639294657a0990f8.data': null,
+            };
+
+            root.style.padding = '0';
+            root.style.display = 'block';
+            root.style.background = '#000';
+            root.innerHTML = `
+                <div id="loading-text" style="color:black;font-size:48px;font-family:cursive;text-align:center;margin-top:20px;position:relative;z-index:2;background:#fff;">LOADING...</div>
+                <canvas id="unity-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;outline:none"></canvas>
+            `;
+
+            async function mergeParts(baseUrl) {
+                const parts = [];
+                for (let i = 1; i <= 99; i++) {
+                    const testUrl = `${baseUrl}.part${i}`;
+                    try {
+                        const head = await fetch(testUrl, { method: 'HEAD' });
+                        if (!head.ok) break;
+                        parts.push(testUrl);
+                    } catch {
+                        break;
+                    }
+                }
+
+                if (parts.length === 0) return baseUrl;
+
+                const buffers = await Promise.all(parts.map(async partUrl => {
+                    const response = await fetch(partUrl);
+                    if (!response.ok) throw new Error(`Failed part ${partUrl}`);
+                    return new Uint8Array(await response.arrayBuffer());
+                }));
+
+                const total = buffers.reduce((sum, buffer) => sum + buffer.length, 0);
+                const merged = new Uint8Array(total);
+                let offset = 0;
+                for (const buffer of buffers) {
+                    merged.set(buffer, offset);
+                    offset += buffer.length;
+                }
+
+                return URL.createObjectURL(new Blob([merged]));
+            }
+
+            async function preMergeAll() {
+                const mergedMap = {};
+                const files = Object.keys(SPLIT_MAP);
+                const total = files.length;
+                let done = 0;
+                const loadingText = document.getElementById('loading-text');
+
+                for (const fileName of files) {
+                    const merged = await mergeParts(`${BASE_URL}Build/${fileName}`);
+                    mergedMap[fileName] = merged;
+                    done++;
+                    const percent = Math.floor((done / total) * 100);
+                    if (loadingText) {
+                        loadingText.innerText = `LOADING... ${percent}%`;
+                    }
+                    console.log('Premerged:', fileName, '->', merged);
+                }
+
+                if (loadingText) {
+                    loadingText.style.display = 'none';
+                }
+
+                return mergedMap;
+            }
+
+            (async () => {
+                const mergedMap = await preMergeAll();
+                window.SPLIT_MAP = mergedMap;
+
+                const originalFetch = window.fetch.bind(window);
+                window.fetch = async function (resource, options) {
+                    if (typeof resource === 'string') {
+                        const key = resource.split('/').pop();
+                        if (key && mergedMap[key]) {
+                            console.log('Redirect fetch:', key);
+                            return originalFetch(mergedMap[key], options);
+                        }
+
+                        if (resource.includes('StreamingAssets')) {
+                            const suffix = resource.split('/StreamingAssets/')[1] || '';
+                            return originalFetch(`${BASE_URL}StreamingAssets/${suffix}`, options);
+                        }
+                    }
+                    return originalFetch(resource, options);
+                };
+
+                const OriginalXHR = window.XMLHttpRequest;
+                window.XMLHttpRequest = function () {
+                    const xhr = new OriginalXHR();
+                    const originalOpen = xhr.open;
+                    xhr.open = function (method, url, ...rest) {
+                        const key = typeof url === 'string' ? url.split('/').pop() : '';
+                        if (key && mergedMap[key]) {
+                            console.log('Redirect XHR:', key);
+                            originalOpen.call(xhr, method, mergedMap[key], ...rest);
+                        } else {
+                            originalOpen.call(xhr, method, url, ...rest);
+                        }
+                    };
+                    return xhr;
+                };
+
+                const canvas = document.getElementById('unity-canvas');
+                const loaderUrl = `${BASE_URL}Build/7a2dbded24d57e056180125b1583e7c4.loader.js`;
+                const config = {
+                    dataUrl: `${BASE_URL}Build/ab8dd356a41a2943639294657a0990f8.data`,
+                    frameworkUrl: `${BASE_URL}Build/91a2bfcec140bc524100478b99a4f6d7.framework.js`,
+                    codeUrl: `${BASE_URL}Build/7db022abd161455e3cc5f207e75d294b.wasm`,
+                    streamingAssetsUrl: `${BASE_URL}StreamingAssets`,
+                    companyName: 'BuildNow GG',
+                    productName: 'BuildNow GG',
+                    productVersion: '1.0.0',
+                };
+
+                const script = document.createElement('script');
+                script.src = loaderUrl;
+                script.onload = () => {
+                    createUnityInstance(canvas, config, () => {
+                        // Progress UI is handled by loading text above.
+                    }).then(unityInstance => {
+                        window.gameInstance = unityInstance;
+                    }).catch(message => alert(message));
+                };
+                document.body.appendChild(script);
+            })();
+
+            function resizeCanvas() {
+                const canvas = document.getElementById('unity-canvas');
+                if (!canvas) return;
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                canvas.style.width = `${window.innerWidth}px`;
+                canvas.style.height = `${window.innerHeight}px`;
+            }
+
+            window.addEventListener('load', resizeCanvas);
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+        };
+
+        window.inlineGames.hustle = function (root) {
+            const BASE_URL = 'https://cdn.jsdelivr.net/gh/web-ports/yomi-hustle@main/';
+
+            root.style.padding = '0';
+            root.style.display = 'block';
+            root.style.minHeight = '100vh';
+            root.style.background = '#000';
+            root.innerHTML = `
+                <style>
+                    #inlineGameRoot {
+                        background: black;
+                        overflow: hidden;
+                    }
+
+                    #inlineGameRoot .hustle-wrap {
+                        touch-action: none;
+                        margin: 0;
+                        border: 0 none;
+                        padding: 0;
+                        text-align: center;
+                        background-color: black;
+                        min-height: 100vh;
+                    }
+
+                    #inlineGameRoot #canvas {
+                        display: block;
+                        margin: 0;
+                        color: white;
+                    }
+
+                    #inlineGameRoot #canvas:focus {
+                        outline: none;
+                    }
+
+                    #inlineGameRoot .godot {
+                        font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+                        color: #e0e0e0;
+                        background-color: #3b3943;
+                        background-image: linear-gradient(to bottom, #403e48, #35333c);
+                        border: 1px solid #45434e;
+                        box-shadow: 0 0 1px 1px #2f2d35;
+                    }
+
+                    #inlineGameRoot #status {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        right: 0;
+                        bottom: 0;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        visibility: hidden;
+                    }
+
+                    #inlineGameRoot #status-progress {
+                        width: 366px;
+                        height: 7px;
+                        background-color: #38363A;
+                        border: 1px solid #444246;
+                        padding: 1px;
+                        box-shadow: 0 0 2px 1px #1B1C22;
+                        border-radius: 2px;
+                        visibility: visible;
+                    }
+
+                    @media only screen and (orientation:portrait) {
+                        #inlineGameRoot #status-progress {
+                            width: 61.8%;
+                        }
+                    }
+
+                    #inlineGameRoot #status-progress-inner {
+                        height: 100%;
+                        width: 0;
+                        box-sizing: border-box;
+                        transition: width 0.5s linear;
+                        background-color: #202020;
+                        border: 1px solid #222223;
+                        box-shadow: 0 0 1px 1px #27282E;
+                        border-radius: 3px;
+                    }
+
+                    #inlineGameRoot #status-indeterminate {
+                        height: 42px;
+                        visibility: visible;
+                        position: relative;
+                    }
+
+                    #inlineGameRoot #status-indeterminate > div {
+                        width: 4.5px;
+                        height: 0;
+                        border-style: solid;
+                        border-width: 9px 3px 0 3px;
+                        border-color: #2b2b2b transparent transparent transparent;
+                        transform-origin: center 21px;
+                        position: absolute;
+                    }
+
+                    #inlineGameRoot #status-indeterminate > div:nth-child(1) { transform: rotate(22.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(2) { transform: rotate(67.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(3) { transform: rotate(112.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(4) { transform: rotate(157.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(5) { transform: rotate(202.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(6) { transform: rotate(247.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(7) { transform: rotate(292.5deg); }
+                    #inlineGameRoot #status-indeterminate > div:nth-child(8) { transform: rotate(337.5deg); }
+
+                    #inlineGameRoot #status-notice {
+                        margin: 0 100px;
+                        line-height: 1.3;
+                        visibility: visible;
+                        padding: 4px 6px;
+                    }
+                </style>
+                <div class="hustle-wrap">
+                    <canvas id="canvas">
+                        HTML5 canvas appears to be unsupported in the current browser.<br />
+                        Please try updating or use a different browser.
+                    </canvas>
+                    <div id="status">
+                        <div id="status-progress" style="display: none;"><div id="status-progress-inner"></div></div>
+                        <div id="status-indeterminate" style="display: none;">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                        <div id="status-notice" class="godot" style="display: none;"></div>
+                    </div>
+                </div>
+            `;
+
+            const existingScript = document.querySelector('script[data-inline-game="hustle-engine"]');
+            const startGame = () => {
+                const GODOT_CONFIG = {
+                    args: [],
+                    canvasResizePolicy: 2,
+                    executable: 'index',
+                    experimentalVK: false,
+                    fileSizes: {
+                        'index.pck': 18868128,
+                        'index.wasm': 17862218,
+                    },
+                    focusCanvas: true,
+                    gdnativeLibs: [],
+                };
+
+                const engine = new Engine(GODOT_CONFIG);
+                const INDETERMINATE_STATUS_STEP_MS = 100;
+                const statusProgress = document.getElementById('status-progress');
+                const statusProgressInner = document.getElementById('status-progress-inner');
+                const statusIndeterminate = document.getElementById('status-indeterminate');
+                const statusNotice = document.getElementById('status-notice');
+
+                let initializing = true;
+                let statusMode = 'hidden';
+                let animationCallbacks = [];
+
+                function animate(time) {
+                    animationCallbacks.forEach(callback => callback(time));
+                    requestAnimationFrame(animate);
+                }
+
+                requestAnimationFrame(animate);
+
+                function animateStatusIndeterminate(ms) {
+                    const index = Math.floor(ms / INDETERMINATE_STATUS_STEP_MS % 8);
+                    if (statusIndeterminate.children[index].style.borderTopColor === '') {
+                        Array.from(statusIndeterminate.children).forEach(child => {
+                            child.style.borderTopColor = '';
+                        });
+                        statusIndeterminate.children[index].style.borderTopColor = '#dfdfdf';
+                    }
+                }
+
+                function setStatusMode(mode) {
+                    if (statusMode === mode || !initializing) {
+                        return;
+                    }
+
+                    [statusProgress, statusIndeterminate, statusNotice].forEach(element => {
+                        element.style.display = 'none';
+                    });
+                    animationCallbacks = animationCallbacks.filter(callback => callback !== animateStatusIndeterminate);
+
+                    switch (mode) {
+                        case 'progress':
+                            statusProgress.style.display = 'block';
+                            break;
+                        case 'indeterminate':
+                            statusIndeterminate.style.display = 'block';
+                            animationCallbacks.push(animateStatusIndeterminate);
+                            break;
+                        case 'notice':
+                            statusNotice.style.display = 'block';
+                            break;
+                        case 'hidden':
+                            break;
+                        default:
+                            throw new Error('Invalid status mode');
+                    }
+
+                    statusMode = mode;
+                }
+
+                function setStatusNotice(text) {
+                    while (statusNotice.lastChild) {
+                        statusNotice.removeChild(statusNotice.lastChild);
+                    }
+
+                    text.split('\n').forEach(line => {
+                        statusNotice.appendChild(document.createTextNode(line));
+                        statusNotice.appendChild(document.createElement('br'));
+                    });
+                }
+
+                function displayFailureNotice(error) {
+                    const message = error.message || error;
+                    console.error(message);
+                    setStatusNotice(message);
+                    setStatusMode('notice');
+                    initializing = false;
+                }
+
+                if (!Engine.isWebGLAvailable()) {
+                    displayFailureNotice('WebGL not available');
+                    return;
+                }
+
+                setStatusMode('indeterminate');
+                engine.startGame({
+                    executable: `${BASE_URL}index`,
+                    mainPack: `${BASE_URL}index.pck`,
+                    canvas: document.getElementById('canvas'),
+                    locale: 'en',
+                    onProgress(current, total) {
+                        if (total > 0) {
+                            statusProgressInner.style.width = `${current / total * 100}%`;
+                            setStatusMode('progress');
+                            if (current === total) {
+                                window.setTimeout(() => {
+                                    setStatusMode('indeterminate');
+                                }, 500);
+                            }
+                        } else {
+                            setStatusMode('indeterminate');
+                        }
+                    },
+                }).then(() => {
+                    setStatusMode('hidden');
+                    initializing = false;
+                }).catch(displayFailureNotice);
+            };
+
+            if (existingScript) {
+                startGame();
+            } else {
+                const script = document.createElement('script');
+                script.src = `${BASE_URL}index.js`;
+                script.dataset.inlineGame = 'hustle-engine';
+                script.onload = startGame;
+                document.body.appendChild(script);
+            }
+        };
+
+        window.inlineGames.silksong = function (root) {
+            const BASE_URL = 'https://cdn.jsdelivr.net/gh/web-ports/hollow-knight-silksong@master/';
+            const CACHE_NAME = 'hksilksongcache-v2';
+
+            root.style.padding = '0';
+            root.style.display = 'block';
+            root.style.minHeight = '100vh';
+            root.style.background = '#000';
+            root.innerHTML = `
+                <style>
+                    #inlineGameRoot {
+                        background: #000;
+                        overflow: hidden;
+                    }
+
+                    #inlineGameRoot #loading-text {
+                        color: white;
+                        font-size: 48px;
+                        font-family: cursive;
+                        text-align: center;
+                        margin-top: 20px;
+                    }
+
+                    #inlineGameRoot #unity-container {
+                        position: relative;
+                        width: 100%;
+                        height: calc(100vh - 80px);
+                    }
+
+                    #inlineGameRoot #unity-canvas {
+                        width: 100%;
+                        height: 100%;
+                        background: #000;
+                        display: block;
+                    }
+                </style>
+                <div id="loading-text">LOADING...</div>
+                <div id="unity-container">
+                    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+                    <div id="unity-loading-bar">
+                        <div id="unity-logo"></div>
+                        <div id="unity-progress-bar-empty">
+                            <div id="unity-progress-bar-full"></div>
+                        </div>
+                    </div>
+                    <div id="unity-warning"></div>
+                </div>
+            `;
+
+            function loadScriptOnce(marker, src) {
+                return new Promise((resolve, reject) => {
+                    const existing = document.querySelector(`script[data-inline-game="${marker}"]`);
+                    if (existing) {
+                        if (existing.dataset.loaded === 'true') {
+                            resolve();
+                        } else {
+                            existing.addEventListener('load', () => resolve(), { once: true });
+                            existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+                        }
+                        return;
+                    }
+
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.dataset.inlineGame = marker;
+                    script.onload = () => {
+                        script.dataset.loaded = 'true';
+                        resolve();
+                    };
+                    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                    document.body.appendChild(script);
+                });
+            }
+
+            (async () => {
+                try {
+                    await loadScriptOnce('silksong-jszip', `${BASE_URL}jszip.js`);
+
+                    const loadingText = document.querySelector('#loading-text');
+
+                    const originalFetch = window.fetch.bind(window);
+                    window.fetch = async function (resource, options) {
+                        const url = typeof resource === 'string' ? resource : resource.url;
+                        const cleanPath = url.split('/').pop();
+
+                        const cache = await caches.open(CACHE_NAME);
+                        const cachedResponse = await cache.match(cleanPath);
+                        if (cachedResponse) {
+                            return cachedResponse;
+                        }
+
+                        return originalFetch(resource, options);
+                    };
+
+                    async function isCached() {
+                        const cache = await caches.open(CACHE_NAME);
+                        const done = await cache.match('CACHE_COMPLETE');
+                        return !!done;
+                    }
+
+                    async function cleanupOldCaches() {
+                        const cacheNames = await caches.keys();
+                        await Promise.all(cacheNames.map(name => {
+                            if (name !== CACHE_NAME && name.includes('hksilksong')) {
+                                return caches.delete(name);
+                            }
+                            return Promise.resolve();
+                        }));
+                    }
+
+                    async function unzipAndStore(zipBlob) {
+                        if (!zipBlob) {
+                            throw new Error('ZIP is missing');
+                        }
+
+                        loadingText.textContent = 'EXTRACTING ASSETS...';
+                        const zip = await JSZip.loadAsync(zipBlob);
+                        const files = Object.values(zip.files).filter(file => !file.dir);
+                        const total = files.length;
+                        const cache = await caches.open(CACHE_NAME);
+
+                        let processed = 0;
+                        const batchSize = 10;
+
+                        for (let i = 0; i < files.length; i += batchSize) {
+                            const batch = files.slice(i, i + batchSize);
+
+                            await Promise.all(batch.map(async file => {
+                                try {
+                                    const blob = await file.async('blob');
+                                    await cache.put(file.name, new Response(blob));
+                                } catch (error) {
+                                    console.error('Failed:', file.name, error);
+                                }
+
+                                processed++;
+                                loadingText.textContent = `EXTRACTING ASSETS... (${processed}/${total})`;
+                            }));
+
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+
+                        await cache.put('CACHE_COMPLETE', new Response('ok'));
+                    }
+
+                    let loadedBytes = 0;
+
+                    async function fetchWithProgress(url) {
+                        const response = await originalFetch(url);
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch: ${url}`);
+                        }
+
+                        const reader = response.body.getReader();
+                        const chunks = [];
+                        let received = 0;
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            received += value.length;
+                            loadedBytes += value.length;
+                            chunks.push(value);
+
+                            const mbDone = (loadedBytes / (1024 * 1024)).toFixed(2);
+                            const mbTotal = '1986.64';
+                            loadingText.textContent = `DOWNLOADING ASSETS... (${mbDone} MB / ${mbTotal} MB)`;
+                        }
+
+                        const fullBuffer = new Uint8Array(received);
+                        let offset = 0;
+                        for (const chunk of chunks) {
+                            fullBuffer.set(chunk, offset);
+                            offset += chunk.length;
+                        }
+
+                        return fullBuffer.buffer;
+                    }
+
+                    async function mergeFiles(parts) {
+                        const buffers = await Promise.all(parts.map(part => fetchWithProgress(part)));
+                        return new Blob(buffers);
+                    }
+
+                    function getParts(file, start, end) {
+                        const parts = [];
+                        for (let i = start; i <= end; i++) {
+                            parts.push(`${file}.part${i}`);
+                        }
+                        return parts;
+                    }
+
+                    await cleanupOldCaches();
+                    if (!(await isCached())) {
+                        loadingText.textContent = 'DOWNLOADING ASSETS...';
+                        const webglzip = await mergeFiles(getParts(`${BASE_URL}StreamingAssets/aa/WebGL.zip`, 1, 100));
+                        await unzipAndStore(webglzip);
+                    } else {
+                        loadingText.textContent = 'LOADING FROM CACHE...';
+                    }
+
+                    const canvas = document.querySelector('#unity-canvas');
+                    const loadingBar = document.querySelector('#unity-loading-bar');
+                    const progressBarFull = document.querySelector('#unity-progress-bar-full');
+                    const warningBanner = document.querySelector('#unity-warning');
+
+                    function unityShowBanner(msg, type) {
+                        function update() {
+                            warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+                        }
+
+                        const div = document.createElement('div');
+                        div.innerHTML = msg;
+                        warningBanner.appendChild(div);
+
+                        if (type === 'error') {
+                            div.style = 'background:red;padding:10px;';
+                        } else {
+                            if (type === 'warning') {
+                                div.style = 'background:yellow;padding:10px;';
+                            }
+                            setTimeout(() => {
+                                warningBanner.removeChild(div);
+                                update();
+                            }, 5000);
+                        }
+                        update();
+                    }
+
+                    const buildUrl = `${BASE_URL}Build`;
+                    const config = {
+                        dataUrl: `${buildUrl}/w-pt.data.unityweb`,
+                        frameworkUrl: `${buildUrl}/w-pt.framework.js.unityweb`,
+                        codeUrl: `${buildUrl}/w-pt.wasm.unityweb`,
+                        streamingAssetsUrl: `${BASE_URL}StreamingAssets`,
+                        companyName: 'EDUrocks Group, Truffled, GN-Math',
+                        productName: 'Hollow Knight SilkSong',
+                        productVersion: '1.0',
+                        showBanner: unityShowBanner,
+                    };
+
+                    loadingBar.style.display = 'block';
+
+                    await loadScriptOnce('silksong-loader', 'https://cdn.jsdelivr.net/gh/web-ports/hollow-knight-silksong@latest/Build/w-pt.loader.js');
+                    createUnityInstance(canvas, config, progress => {
+                        progressBarFull.style.width = `${progress * 100}%`;
+                    }).then(() => {
+                        loadingBar.remove();
+                        loadingText.remove();
+                    }).catch(alert);
+                } catch (error) {
+                    console.error(error);
+                    const loadingText = document.querySelector('#loading-text');
+                    if (loadingText) {
+                        loadingText.textContent = `ERROR: ${error.message}`;
+                    }
+                }
+            })();
+        };
+
+        const requestedGameId = (window.location.hash || '#ddlc').replace('#', '').trim() || 'ddlc';
+
+        // Any id except "ddlc" uses one-file inline game mode.
+        if (requestedGameId !== 'ddlc') {
+            showInlineGame(requestedGameId);
+        } else {
         function mergeFiles(fileParts) {
             return new Promise((resolve, reject) => {
                 let buffers = [];
@@ -281,7 +1004,8 @@
             renpy.async = true;
             document.body.appendChild(renpy);
         });
+        }
     </script>
-</head>
-<body>
+</body>
+</html>
 
