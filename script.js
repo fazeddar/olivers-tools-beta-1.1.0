@@ -74,6 +74,10 @@ const partnersWindowResize = document.getElementById('partnersWindowResize');
 const gamesOverlay = document.getElementById('gamesOverlay');
 const gamesWindow = document.getElementById('gamesWindow');
 const gamesWindowHeader = document.getElementById('gamesWindowHeader');
+const gamesSearchInput = document.getElementById('gamesSearchInput');
+const gamesSearchPage = document.getElementById('gamesSearchPage');
+const gamesSearchResults = document.getElementById('gamesSearchResults');
+const gamesRandomBtn = document.getElementById('gamesRandomBtn');
 const gamesWindowBack = document.getElementById('gamesWindowBack');
 const gamesWindowClose = document.getElementById('gamesWindowClose');
 const gamesWindowResize = document.getElementById('gamesWindowResize');
@@ -86,6 +90,16 @@ let partnersDrag = null;
 let partnersResize = null;
 let gamesDrag = null;
 let gamesResize = null;
+
+function updateGamesBackButtonVisibility() {
+    if (!gamesWindowBack || !gamesWindowBody) {
+        return;
+    }
+
+    const inSubView = gamesWindowBody.classList.contains('has-preview') || gamesWindowBody.classList.contains('is-searching');
+    gamesWindowBack.classList.toggle('is-visible', inSubView);
+    gamesRandomBtn?.classList.toggle('is-hidden', inSubView);
+}
 
 function openPartnersWindow() {
     partnersOverlay?.classList.add('visible');
@@ -101,6 +115,101 @@ function openGamesWindow() {
     gamesOverlay?.classList.add('visible');
     gamesOverlay?.setAttribute('aria-hidden', 'false');
     updateActiveGamesMenuButton();
+    updateGamesBackButtonVisibility();
+}
+
+function openGameFromButton(gameButton) {
+    if (!gameButton || !gamesPreviewFrame || !gamesWindowBody) {
+        return;
+    }
+
+    const section = gameButton.closest('.games-section');
+    const sectionKey = section?.id?.replace('games-section-', '') || 'unknown';
+    const gameName = gameButton.textContent?.trim() || 'game';
+    const customSrc = gameButton.dataset.src;
+
+    gamesPreviewFrame.src = customSrc
+        ? customSrc
+        : `game-placeholder.html?section=${encodeURIComponent(sectionKey)}&game=${encodeURIComponent(gameName)}`;
+
+    // If the user scrolled deep in the list, reset to top so preview is fully visible.
+    gamesWindowBody.scrollTop = 0;
+    gamesWindowBody.classList.remove('is-searching');
+    gamesSearchPage?.setAttribute('aria-hidden', 'true');
+    gamesWindowBody.classList.add('has-preview');
+    setActiveGamesMenuButton(`games-section-${sectionKey}`);
+    updateGamesBackButtonVisibility();
+}
+
+function openRandomGame() {
+    if (!gamesWindowBody) {
+        return;
+    }
+
+    const availableGameButtons = Array.from(gamesWindowBody.querySelectorAll('.games-section button'));
+    if (availableGameButtons.length === 0) {
+        return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableGameButtons.length);
+    const randomGameButton = availableGameButtons[randomIndex];
+    openGameFromButton(randomGameButton);
+}
+
+function clearGamesSearch() {
+    if (gamesSearchInput) {
+        gamesSearchInput.value = '';
+    }
+    if (gamesSearchResults) {
+        gamesSearchResults.innerHTML = '';
+    }
+    gamesWindowBody?.classList.remove('is-searching');
+    gamesSearchPage?.setAttribute('aria-hidden', 'true');
+    updateGamesBackButtonVisibility();
+}
+
+function renderGamesSearch(query) {
+    if (!gamesWindowBody || !gamesSearchResults || !gamesSearchPage) {
+        return;
+    }
+
+    const textQuery = query.trim().toLowerCase();
+    if (!textQuery) {
+        gamesSearchResults.innerHTML = '';
+        gamesWindowBody.classList.remove('is-searching');
+        gamesSearchPage.setAttribute('aria-hidden', 'true');
+        updateGamesBackButtonVisibility();
+        return;
+    }
+
+    const gameButtons = Array.from(gamesWindowBody.querySelectorAll('.games-section button'));
+    const matches = gameButtons.filter(button => {
+        const buttonLabel = button.textContent?.trim().toLowerCase() || '';
+        return buttonLabel.includes(textQuery);
+    });
+
+    stopGamesPreview();
+    gamesWindowBody.classList.add('is-searching');
+    gamesSearchPage.setAttribute('aria-hidden', 'false');
+    gamesSearchResults.innerHTML = '';
+    updateGamesBackButtonVisibility();
+
+    if (matches.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'games-search-empty';
+        empty.textContent = 'No games found for that search.';
+        gamesSearchResults.appendChild(empty);
+        return;
+    }
+
+    matches.forEach(sourceButton => {
+        const resultButton = document.createElement('button');
+        resultButton.type = 'button';
+        resultButton.className = 'outline-button';
+        resultButton.textContent = sourceButton.textContent?.trim() || 'game';
+        resultButton.addEventListener('click', () => openGameFromButton(sourceButton));
+        gamesSearchResults.appendChild(resultButton);
+    });
 }
 
 function stopGamesPreview() {
@@ -112,10 +221,17 @@ function stopGamesPreview() {
     if (gamesPreviewFrame) {
         gamesPreviewFrame.src = 'about:blank';
     }
+    updateGamesBackButtonVisibility();
+}
+
+function showGamesHome() {
+    stopGamesPreview();
+    clearGamesSearch();
 }
 
 function closeGamesWindow() {
     stopGamesPreview();
+    clearGamesSearch();
     gamesOverlay?.classList.remove('visible');
     gamesOverlay?.setAttribute('aria-hidden', 'true');
 }
@@ -158,7 +274,8 @@ function updateActiveGamesMenuButton() {
 partnersDockBtn?.addEventListener('click', openPartnersWindow);
 partnersWindowClose?.addEventListener('click', closePartnersWindow);
 gamesDockBtn?.addEventListener('click', openGamesWindow);
-gamesWindowBack?.addEventListener('click', stopGamesPreview);
+gamesRandomBtn?.addEventListener('click', openRandomGame);
+gamesWindowBack?.addEventListener('click', showGamesHome);
 gamesWindowClose?.addEventListener('click', closeGamesWindow);
 
 partnersOverlay?.addEventListener('click', event => {
@@ -178,6 +295,8 @@ gamesMenuButtons.forEach(button => {
         if (!gamesWindowBody) {
             return;
         }
+
+        clearGamesSearch();
 
         const targetId = button.dataset.target;
         const target = targetId ? gamesWindowBody.querySelector(`#${targetId}`) : null;
@@ -202,18 +321,11 @@ gamesWindowBody?.addEventListener('click', event => {
         return;
     }
 
-    const section = gameButton.closest('.games-section');
-    const sectionKey = section?.id?.replace('games-section-', '') || 'unknown';
-    const gameName = gameButton.textContent?.trim() || 'game';
+    openGameFromButton(gameButton);
+});
 
-    // If the button has a data-src attribute, load that file directly.
-    // Otherwise fall back to the placeholder so nothing breaks.
-    const customSrc = gameButton.dataset.src;
-    gamesPreviewFrame.src = customSrc
-        ? customSrc
-        : `game-placeholder.html?section=${encodeURIComponent(sectionKey)}&game=${encodeURIComponent(gameName)}`;
-    gamesWindowBody.classList.add('has-preview');
-    setActiveGamesMenuButton(`games-section-${sectionKey}`);
+gamesSearchInput?.addEventListener('input', () => {
+    renderGamesSearch(gamesSearchInput.value);
 });
 
 gamesWindowBody?.addEventListener('scroll', updateActiveGamesMenuButton);
@@ -261,6 +373,8 @@ gamesWindowHeader?.addEventListener('pointerdown', event => {
         !gamesWindow ||
         event.target === gamesWindowClose ||
         gamesWindowClose?.contains(event.target) ||
+        event.target === gamesRandomBtn ||
+        gamesRandomBtn?.contains(event.target) ||
         event.target === gamesWindowBack ||
         gamesWindowBack?.contains(event.target)
     ) {
