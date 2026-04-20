@@ -137,8 +137,12 @@
     <section class="games-overlay" id="gamesOverlay" aria-hidden="true">
         <article class="games-window" id="gamesWindow" role="dialog" aria-modal="true" aria-labelledby="gamesWindowTitle">
             <header class="games-window-header" id="gamesWindowHeader">
-                <h2 class="games-window-title" id="gamesWindowTitle">9@m3z</h2>
+                <div class="games-window-meta">
+                    <h2 class="games-window-title" id="gamesWindowTitle">9@m3z</h2>
+                    <input class="games-window-search" id="gamesSearchInput" type="search" placeholder="Search games..." aria-label="Search games" />
+                </div>
                 <div class="games-window-actions">
+                    <button class="games-window-random" id="gamesRandomBtn" type="button" aria-label="Open random game">Random</button>
                     <button class="games-window-back" id="gamesWindowBack" type="button" aria-label="Back to game list">Back</button>
                     <button class="games-window-close" id="gamesWindowClose" type="button" aria-label="Close games window">Close</button>
                 </div>
@@ -174,18 +178,27 @@
                     <button class="games-menu-button" type="button" data-target="games-section-z">z</button>
                 </aside>
                 <div class="games-window-body" id="gamesWindowBody">
+                    <div class="games-search-page" id="gamesSearchPage" aria-hidden="true">
+                        <p class="games-search-title">Search results</p>
+                        <div class="games-search-results" id="gamesSearchResults"></div>
+                    </div>
                     <iframe class="games-preview-frame" id="gamesPreviewFrame" title="Game preview" loading="lazy"></iframe>
                     <section class="games-section" id="games-section-0">
-                        <button class="outline-button games-test-button" type="button" data-src="apps.html">ddlc</button>
                     </section>
                     <section class="games-section" id="games-section-a"></section>
-                    <section class="games-section" id="games-section-b"></section>
+                    <section class="games-section" id="games-section-b">
+                        <button class="outline-button" id="buildnow" type="button" data-src="apps.html#buildnow">buildnow.gg</button>
+                    </section>
                     <section class="games-section" id="games-section-c"></section>
-                    <section class="games-section" id="games-section-d"></section>
+                    <section class="games-section" id="games-section-d">
+                        <button class="outline-button games-test-button" id="ddlc" type="button" data-src="apps.html#ddlc">ddlc</button>
+                    </section>
                     <section class="games-section" id="games-section-e"></section>
                     <section class="games-section" id="games-section-f"></section>
                     <section class="games-section" id="games-section-g"></section>
-                    <section class="games-section" id="games-section-h"></section>
+                    <section class="games-section" id="games-section-h">
+                        <button class="outline-button" id="silksong" type="button" data-src="apps.html#silksong">hollow knight silksong</button>
+                    </section>
                     <section class="games-section" id="games-section-i"></section>
                     <section class="games-section" id="games-section-j"></section>
                     <section class="games-section" id="games-section-k"></section>
@@ -202,7 +215,9 @@
                     <section class="games-section" id="games-section-v"></section>
                     <section class="games-section" id="games-section-w"></section>
                     <section class="games-section" id="games-section-x"></section>
-                    <section class="games-section" id="games-section-y"></section>
+                    <section class="games-section" id="games-section-y">
+                        <button class="outline-button" id="hustle" type="button" data-src="apps.html#hustle">yomi hustle</button>
+                    </section>
                     <section class="games-section" id="games-section-z"></section>
                 </div>
             </div>
