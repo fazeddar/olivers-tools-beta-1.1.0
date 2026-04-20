@@ -118,6 +118,37 @@ body {
     color: var(--text);
 }
 
+.games-window-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.games-window-search {
+    flex: 1;
+    min-width: 120px;
+    max-width: 320px;
+    border: 1px solid color-mix(in srgb, var(--accent) 46%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+}
+
+.games-window-search::placeholder {
+    color: color-mix(in srgb, var(--text) 64%, transparent);
+}
+
+.games-window-search:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent) 78%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent) inset;
+}
+
 .partners-window-close,
 .games-window-close {
     border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
@@ -137,6 +168,7 @@ body {
     gap: 8px;
 }
 
+.games-window-random,
 .games-window-back,
 .games-window-close {
     border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
@@ -148,6 +180,26 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     cursor: pointer;
+}
+
+.games-window-random {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.games-window-random.is-hidden {
+    display: none;
+}
+
+.games-window-back {
+    display: none;
+}
+
+.games-window-back.is-visible {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .partners-window-body,
@@ -186,6 +238,45 @@ body {
 }
 
 .games-window-body.has-preview .games-preview-frame {
+    display: block;
+}
+
+.games-search-page {
+    display: none;
+    min-height: 100%;
+    padding: 10px;
+}
+
+.games-search-title {
+    margin: 0 0 12px;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.86;
+}
+
+.games-search-results {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.games-search-empty {
+    margin: 2px 0 0;
+    opacity: 0.82;
+    font-size: 0.86rem;
+}
+
+.games-window-body.is-searching {
+    overflow-y: auto;
+}
+
+.games-window-body.is-searching .games-section {
+    display: none;
+}
+
+.games-window-body.is-searching .games-search-page {
     display: block;
 }
 
