@@ -66,11 +66,18 @@ const appearanceView = document.getElementById('appearanceView');
 const appearanceBackBtn = document.getElementById('appearanceBackBtn');
 const partnersDockBtn = document.getElementById('partnersDockBtn');
 const gamesDockBtn = document.getElementById('gamesDockBtn');
+const internetDockBtn = document.getElementById('internetDockBtn');
+const updatesDockBtn = document.getElementById('updatesDockBtn');
 const partnersOverlay = document.getElementById('partnersOverlay');
 const partnersWindow = document.getElementById('partnersWindow');
 const partnersWindowHeader = document.getElementById('partnersWindowHeader');
 const partnersWindowClose = document.getElementById('partnersWindowClose');
 const partnersWindowResize = document.getElementById('partnersWindowResize');
+const updatesOverlay = document.getElementById('updatesOverlay');
+const updatesWindow = document.getElementById('updatesWindow');
+const updatesWindowHeader = document.getElementById('updatesWindowHeader');
+const updatesWindowClose = document.getElementById('updatesWindowClose');
+const updatesWindowResize = document.getElementById('updatesWindowResize');
 const gamesOverlay = document.getElementById('gamesOverlay');
 const gamesWindow = document.getElementById('gamesWindow');
 const gamesWindowHeader = document.getElementById('gamesWindowHeader');
@@ -84,12 +91,21 @@ const gamesWindowResize = document.getElementById('gamesWindowResize');
 const gamesWindowBody = document.getElementById('gamesWindowBody');
 const gamesPreviewFrame = document.getElementById('gamesPreviewFrame');
 const gamesMenuButtons = Array.from(document.querySelectorAll('.games-menu-button[data-target]'));
+const proxyOverlay = document.getElementById('proxyOverlay');
+const proxyWindow = document.getElementById('proxyWindow');
+const proxyWindowHeader = document.getElementById('proxyWindowHeader');
+const proxyWindowClose = document.getElementById('proxyWindowClose');
+const proxyWindowResize = document.getElementById('proxyWindowResize');
 let lastScrollY = window.scrollY;
 let appearanceCloseTimer = null;
 let partnersDrag = null;
 let partnersResize = null;
+let updatesDrag = null;
+let updatesResize = null;
 let gamesDrag = null;
 let gamesResize = null;
+let proxyDrag = null;
+let proxyResize = null;
 
 function updateGamesBackButtonVisibility() {
     if (!gamesWindowBack || !gamesWindowBody) {
@@ -111,11 +127,31 @@ function closePartnersWindow() {
     partnersOverlay?.setAttribute('aria-hidden', 'true');
 }
 
+function openUpdatesWindow() {
+    updatesOverlay?.classList.add('visible');
+    updatesOverlay?.setAttribute('aria-hidden', 'false');
+}
+
+function closeUpdatesWindow() {
+    updatesOverlay?.classList.remove('visible');
+    updatesOverlay?.setAttribute('aria-hidden', 'true');
+}
+
 function openGamesWindow() {
     gamesOverlay?.classList.add('visible');
     gamesOverlay?.setAttribute('aria-hidden', 'false');
     updateActiveGamesMenuButton();
     updateGamesBackButtonVisibility();
+}
+
+function openProxyWindow() {
+    proxyOverlay?.classList.add('visible');
+    proxyOverlay?.setAttribute('aria-hidden', 'false');
+}
+
+function closeProxyWindow() {
+    proxyOverlay?.classList.remove('visible');
+    proxyOverlay?.setAttribute('aria-hidden', 'true');
 }
 
 function openGameFromButton(gameButton) {
@@ -274,9 +310,13 @@ function updateActiveGamesMenuButton() {
 partnersDockBtn?.addEventListener('click', openPartnersWindow);
 partnersWindowClose?.addEventListener('click', closePartnersWindow);
 gamesDockBtn?.addEventListener('click', openGamesWindow);
+internetDockBtn?.addEventListener('click', openProxyWindow);
+updatesDockBtn?.addEventListener('click', openUpdatesWindow);
 gamesRandomBtn?.addEventListener('click', openRandomGame);
 gamesWindowBack?.addEventListener('click', showGamesHome);
 gamesWindowClose?.addEventListener('click', closeGamesWindow);
+proxyWindowClose?.addEventListener('click', closeProxyWindow);
+updatesWindowClose?.addEventListener('click', closeUpdatesWindow);
 
 partnersOverlay?.addEventListener('click', event => {
     if (event.target === partnersOverlay) {
@@ -284,9 +324,21 @@ partnersOverlay?.addEventListener('click', event => {
     }
 });
 
+updatesOverlay?.addEventListener('click', event => {
+    if (event.target === updatesOverlay) {
+        closeUpdatesWindow();
+    }
+});
+
 gamesOverlay?.addEventListener('click', event => {
     if (event.target === gamesOverlay) {
         closeGamesWindow();
+    }
+});
+
+proxyOverlay?.addEventListener('click', event => {
+    if (event.target === proxyOverlay) {
+        closeProxyWindow();
     }
 });
 
@@ -368,6 +420,42 @@ partnersWindowResize?.addEventListener('pointerdown', event => {
     event.stopPropagation();
 });
 
+updatesWindowHeader?.addEventListener('pointerdown', event => {
+    if (!updatesWindow || event.target === updatesWindowClose || updatesWindowClose?.contains(event.target)) {
+        return;
+    }
+
+    const rect = updatesWindow.getBoundingClientRect();
+    updatesDrag = {
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top,
+    };
+
+    updatesWindow.style.left = `${rect.left}px`;
+    updatesWindow.style.top = `${rect.top}px`;
+    updatesWindow.style.transform = 'none';
+    updatesWindowHeader.setPointerCapture(event.pointerId);
+});
+
+updatesWindowResize?.addEventListener('pointerdown', event => {
+    if (!updatesWindow) {
+        return;
+    }
+
+    const rect = updatesWindow.getBoundingClientRect();
+    updatesResize = {
+        startX: event.clientX,
+        startY: event.clientY,
+        width: rect.width,
+        height: rect.height,
+    };
+
+    updatesWindowResize.setPointerCapture(event.pointerId);
+    event.stopPropagation();
+});
+
 gamesWindowHeader?.addEventListener('pointerdown', event => {
     if (
         !gamesWindow ||
@@ -412,6 +500,42 @@ gamesWindowResize?.addEventListener('pointerdown', event => {
     event.stopPropagation();
 });
 
+proxyWindowHeader?.addEventListener('pointerdown', event => {
+    if (!proxyWindow || event.target === proxyWindowClose || proxyWindowClose?.contains(event.target)) {
+        return;
+    }
+
+    const rect = proxyWindow.getBoundingClientRect();
+    proxyDrag = {
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top,
+    };
+
+    proxyWindow.style.left = `${rect.left}px`;
+    proxyWindow.style.top = `${rect.top}px`;
+    proxyWindow.style.transform = 'none';
+    proxyWindowHeader.setPointerCapture(event.pointerId);
+});
+
+proxyWindowResize?.addEventListener('pointerdown', event => {
+    if (!proxyWindow) {
+        return;
+    }
+
+    const rect = proxyWindow.getBoundingClientRect();
+    proxyResize = {
+        startX: event.clientX,
+        startY: event.clientY,
+        width: rect.width,
+        height: rect.height,
+    };
+
+    proxyWindowResize.setPointerCapture(event.pointerId);
+    event.stopPropagation();
+});
+
 window.addEventListener('pointermove', event => {
     if (partnersDrag && partnersWindow) {
         const dx = event.clientX - partnersDrag.startX;
@@ -433,6 +557,26 @@ window.addEventListener('pointermove', event => {
         partnersWindow.style.height = `${newHeight}px`;
     }
 
+    if (updatesDrag && updatesWindow) {
+        const dx = event.clientX - updatesDrag.startX;
+        const dy = event.clientY - updatesDrag.startY;
+        const maxLeft = Math.max(8, window.innerWidth - updatesWindow.offsetWidth - 8);
+        const maxTop = Math.max(8, window.innerHeight - updatesWindow.offsetHeight - 8);
+        const nextLeft = Math.min(maxLeft, Math.max(8, updatesDrag.left + dx));
+        const nextTop = Math.min(maxTop, Math.max(8, updatesDrag.top + dy));
+        updatesWindow.style.left = `${nextLeft}px`;
+        updatesWindow.style.top = `${nextTop}px`;
+    }
+
+    if (updatesResize && updatesWindow) {
+        const dw = event.clientX - updatesResize.startX;
+        const dh = event.clientY - updatesResize.startY;
+        const newWidth = Math.max(320, updatesResize.width + dw);
+        const newHeight = Math.max(220, updatesResize.height + dh);
+        updatesWindow.style.width = `${newWidth}px`;
+        updatesWindow.style.height = `${newHeight}px`;
+    }
+
     if (gamesDrag && gamesWindow) {
         const dx = event.clientX - gamesDrag.startX;
         const dy = event.clientY - gamesDrag.startY;
@@ -452,13 +596,37 @@ window.addEventListener('pointermove', event => {
         gamesWindow.style.width = `${newWidth}px`;
         gamesWindow.style.height = `${newHeight}px`;
     }
+
+    if (proxyDrag && proxyWindow) {
+        const dx = event.clientX - proxyDrag.startX;
+        const dy = event.clientY - proxyDrag.startY;
+        const maxLeft = Math.max(8, window.innerWidth - proxyWindow.offsetWidth - 8);
+        const maxTop = Math.max(8, window.innerHeight - proxyWindow.offsetHeight - 8);
+        const nextLeft = Math.min(maxLeft, Math.max(8, proxyDrag.left + dx));
+        const nextTop = Math.min(maxTop, Math.max(8, proxyDrag.top + dy));
+        proxyWindow.style.left = `${nextLeft}px`;
+        proxyWindow.style.top = `${nextTop}px`;
+    }
+
+    if (proxyResize && proxyWindow) {
+        const dw = event.clientX - proxyResize.startX;
+        const dh = event.clientY - proxyResize.startY;
+        const newWidth = Math.max(320, proxyResize.width + dw);
+        const newHeight = Math.max(220, proxyResize.height + dh);
+        proxyWindow.style.width = `${newWidth}px`;
+        proxyWindow.style.height = `${newHeight}px`;
+    }
 });
 
 window.addEventListener('pointerup', () => {
     partnersDrag = null;
     partnersResize = null;
+    updatesDrag = null;
+    updatesResize = null;
     gamesDrag = null;
     gamesResize = null;
+    proxyDrag = null;
+    proxyResize = null;
 });
 
 function showMainSettingsView() {
@@ -573,8 +741,12 @@ window.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
         if (partnersOverlay?.classList.contains('visible')) {
             closePartnersWindow();
+        } else if (updatesOverlay?.classList.contains('visible')) {
+            closeUpdatesWindow();
         } else if (gamesOverlay?.classList.contains('visible')) {
             closeGamesWindow();
+        } else if (proxyOverlay?.classList.contains('visible')) {
+            closeProxyWindow();
         } else if (supportOverlay?.classList.contains('visible')) {
             closeSupportPanel();
         } else if (settingsOverlay?.classList.contains('visible')) {
