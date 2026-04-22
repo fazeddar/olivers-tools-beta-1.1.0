@@ -766,7 +766,7 @@ settingsAppearanceBtn?.addEventListener('click', () => {
 });
 
 settingsPrivacyBtn?.addEventListener('click', () => {
-    typePanelText('Privacy settings are coming soon.');
+    typePanelText('I wont sell your data bro');
 });
 
 appearanceBackBtn?.addEventListener('click', closeAppearanceViewAnimated);
