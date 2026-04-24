@@ -74,6 +74,7 @@ const partnersWindowHeader = document.getElementById('partnersWindowHeader');
 const partnersWindowClose = document.getElementById('partnersWindowClose');
 const partnersWindowResize = document.getElementById('partnersWindowResize');
 const updatesOverlay = document.getElementById('updatesOverlay');
+const LinksWindow = document.getElementById('LinksWindow')
 const updatesWindow = document.getElementById('updatesWindow');
 const updatesWindowHeader = document.getElementById('updatesWindowHeader');
 const updatesWindowClose = document.getElementById('updatesWindowClose');
