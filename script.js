@@ -132,6 +132,16 @@ function openUpdatesWindow() {
     updatesOverlay?.setAttribute('aria-hidden', 'false');
 }
 
+function openLinksWindow() {
+    LinksOverlay?.classList.add('visible');
+    LinksOverlay?.setAttribute('aria-hidden', 'false');
+}
+
+function closeLinksWindow() {
+    LinksOverlay?.classList.add('visible');
+    LinksOverlay?.setAttribute('aria-hidden', 'true');
+}
+
 function closeUpdatesWindow() {
     updatesOverlay?.classList.remove('visible');
     updatesOverlay?.setAttribute('aria-hidden', 'true');
