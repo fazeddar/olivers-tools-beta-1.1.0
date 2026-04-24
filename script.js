@@ -74,7 +74,6 @@ const partnersWindowHeader = document.getElementById('partnersWindowHeader');
 const partnersWindowClose = document.getElementById('partnersWindowClose');
 const partnersWindowResize = document.getElementById('partnersWindowResize');
 const updatesOverlay = document.getElementById('updatesOverlay');
-const LinksWindow = document.getElementById('LinksWindow')
 const updatesWindow = document.getElementById('updatesWindow');
 const updatesWindowHeader = document.getElementById('updatesWindowHeader');
 const updatesWindowClose = document.getElementById('updatesWindowClose');
@@ -131,16 +130,6 @@ function closePartnersWindow() {
 function openUpdatesWindow() {
     updatesOverlay?.classList.add('visible');
     updatesOverlay?.setAttribute('aria-hidden', 'false');
-}
-
-function openLinksWindow() {
-    LinksOverlay?.classList.add('visible');
-    LinksOverlay?.setAttribute('aria-hidden', 'false');
-}
-
-function closeLinksWindow() {
-    LinksOverlay?.classList.add('visible');
-    LinksOverlay?.setAttribute('aria-hidden', 'true');
 }
 
 function closeUpdatesWindow() {
