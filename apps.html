@@ -1441,38 +1441,143 @@
 </body>
 </html>
 
-window.inlineGames["TEST"] = function(root) { /*
-    <!DOCTYPE html>
+window.inlineGames["TEST"] = function(root) { /* <!DOCTYPE html>
 <html lang="en">
-<link rel="stylesheet" type="text/css" href="style.css"/>
 
 <head>
-	<base href="https://cdn.jsdelivr.net/gh/genizy/fnaf@latest/w/">
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, target-densitydpi=device-dpi" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="HandheldFriendly" content="true" />
-    <title>Five Nights at Freddy's World</title>
+    <base href="https://cdn.jsdelivr.net/gh/genizy/web-port@de75523557e46f375fc9173a9a0c0d34d8ed34f9/thats-not-my-neighbor/">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+    <title>That's not my neighbor</title>
+    <link rel="stylesheet" href="style.css">
+    <link id="-gd-engine-icon" rel="icon" type="image/png" href="thats-not-my-neighbor.icon.png" />
+    <link rel="apple-touch-icon" href="thats-not-my-neighbor.apple-touch-icon.png" />
 </head>
 
 <body>
-    <div style="display: inline-block; -webkit-user-select: none; text-align: left">
-        <canvas id="MMFCanvas" width="1280" height="720"> Your browser does not support Canvas, Please try again. </canvas>
-    </div>
-    <div id="progress-container">
-        <div style="margin-bottom: 6px;">Downloading... <span id="download-text">0%</span></div>
-        <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
-            <div id="download-bar" style="height: 10px; background: #3b82f6; width: 0%; transition: width 0.2s;"></div>
-        </div>
-        <div style="margin: 12px 0 6px;">Extracting... <span id="extract-text">0%</span></div>
-        <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
-            <div id="extract-bar" style="height: 10px; background: #10b981; width: 0%; transition: width 0.2s;"></div>
-        </div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="main.js"></script>
+    <div id="loading-text" style="color: white; font-family: cursive; font-size: 48px; text-align: center; margin-top: 20px;">LOADING...</div>
+    <canvas id="canvas"> Your browser does not support the canvas tag. </canvas>
+    <noscript> Your browser does not support JavaScript. </noscript>
+    <div id="status">
+        <img id="status-splash" class="show-image--true fullsize--false use-filter--true" src="thats-not-my-neighbor.png" alt="">
+        <progress id="status-progress"></progress>
+        <div id="status-notice"></div>
+    </div>
+    <script src="thats-not-my-neighbor.js"></script>
+    <script>
+        const GODOT_CONFIG = {
+            "args": [],
+            "canvasResizePolicy": 2,
+            "ensureCrossOriginIsolationHeaders": false,
+            "executable": "thats-not-my-neighbor",
+            "experimentalVK": false,
+            "fileSizes": {
+                "thats-not-my-neighbor.pck": 410934256,
+                "thats-not-my-neighbor.wasm": 43444261
+            },
+            "focusCanvas": true,
+            "gdextensionLibs": []
+        };
+        const GODOT_THREADS_ENABLED = false;
+        const engine = new Engine(GODOT_CONFIG);
+        window.godotrunfunction = function () {
+            const statusOverlay = document.getElementById('status');
+            const statusProgress = document.getElementById('status-progress');
+            const statusNotice = document.getElementById('status-notice');
+            let initializing = true;
+            let statusMode = '';
+
+            function setStatusMode(mode) {
+                if (statusMode === mode || !initializing) {
+                    return;
+                }
+                if (mode === 'hidden') {
+                    statusOverlay.remove();
+                    initializing = false;
+                    return;
+                }
+                statusOverlay.style.visibility = 'visible';
+                statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+                statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+                statusMode = mode;
+            }
+
+            function setStatusNotice(text) {
+                while (statusNotice.lastChild) {
+                    statusNotice.removeChild(statusNotice.lastChild);
+                }
+                const lines = text.split('\n');
+                lines.forEach((line) => {
+                    statusNotice.appendChild(document.createTextNode(line));
+                    statusNotice.appendChild(document.createElement('br'));
+                });
+            }
+
+            function displayFailureNotice(err) {
+                console.error(err);
+                if (err instanceof Error) {
+                    setStatusNotice(err.message);
+                } else if (typeof err === 'string') {
+                    setStatusNotice(err);
+                } else {
+                    setStatusNotice('An unknown error occurred.');
+                }
+                setStatusMode('notice');
+                initializing = false;
+            }
+            const missing = Engine.getMissingFeatures({
+                threads: GODOT_THREADS_ENABLED,
+            });
+            if (missing.length !== 0) {
+                if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+                    let serviceWorkerRegistrationPromise;
+                    try {
+                        serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+                    } catch (err) {
+                        serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+                    }
+                    // There's a chance that installing the service worker would fix the issue
+                    Promise.race([
+                        serviceWorkerRegistrationPromise.then((registration) => {
+                            if (registration != null) {
+                                return Promise.reject(new Error('Service worker already exists.'));
+                            }
+                            return registration;
+                        }).then(() => engine.installServiceWorker()),
+                        // For some reason, `getRegistration()` can stall
+                        new Promise((resolve) => {
+                            setTimeout(() => resolve(), 2000);
+                        }),
+                    ]).then(() => {
+                        // Reload if there was no error.
+                        window.location.reload();
+                    }).catch((err) => {
+                        console.error('Error while registering service worker:', err);
+                    });
+                } else {
+                    // Display the message as usual
+                    const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+                    displayFailureNotice(missingMsg + missing.join('\n'));
+                }
+            } else {
+                setStatusMode('progress');
+                engine.startGame({
+                    'onProgress': function (current, total) {
+                        if (current > 0 && total > 0) {
+                            statusProgress.value = current;
+                            statusProgress.max = total;
+                        } else {
+                            statusProgress.removeAttribute('value');
+                            statusProgress.removeAttribute('max');
+                        }
+                    },
+                }).then(() => {
+                    setStatusMode('hidden');
+                }, displayFailureNotice);
+            }
+        };
+    </script>
 </body>
 
 </html> */ };
